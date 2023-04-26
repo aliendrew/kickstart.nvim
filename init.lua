@@ -117,11 +117,10 @@ require('lazy').setup({
     'navarasu/onedark.nvim',
     priority = 1000,
     config = function()
-      local transparent = true
       require('onedark').setup({
         style = 'deep',
-        transparent = transparent,
-        transparent_sidebar = transparent,
+        transparent = vim.g.transparent_enabled,
+        transparent_sidebar = vim.g.transparent_enabled,
       })
       require('onedark').load()
       --vim.cmd.colorscheme 'onedark'
@@ -473,6 +472,9 @@ end
 --tabs
 vim.keymap.set('n', '<Tab>', '<Cmd>BufferLineCycleNext<CR>', { desc = 'Next tab' })
 vim.keymap.set('n', '<S-Tab>', '<Cmd>BufferLineCyclePrev<CR>', { desc = 'Prev Tab' })
+
+--transparent toggle
+vim.keymap.set('n', 'tr', '<Cmd>TransparentToggle<CR>', { desc = 'Transparent toggle' })
 
 --vim.api.nvim_set_keymap(
 --  "n",
