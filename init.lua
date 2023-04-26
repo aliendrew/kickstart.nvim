@@ -1,7 +1,7 @@
 --[[
 
 =====================================================================
-==================== READ THIS BEFORE CONTINUING ====================
+==================== READ THIS BEFORE CONTINUING ================== 
 =====================================================================
 
 Kickstart.nvim is *not* a distribution.
@@ -41,6 +41,7 @@ P.S. You can delete this when you're done too. It's your config now :)
 --  NOTE: Must happen before plugins are required (otherwise wrong leader will be used)
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
+vim.o.termguicolors = true
 
 -- Install package manager
 --    https://github.com/folke/lazy.nvim
@@ -116,7 +117,14 @@ require('lazy').setup({
     'navarasu/onedark.nvim',
     priority = 1000,
     config = function()
-      vim.cmd.colorscheme 'onedark'
+      local transparent = true
+      require('onedark').setup({
+        style = 'deep',
+        transparent = transparent,
+        transparent_sidebar = transparent,
+      })
+      require('onedark').load()
+      --vim.cmd.colorscheme 'onedark'
     end,
   },
 
@@ -125,12 +133,32 @@ require('lazy').setup({
     -- See `:help lualine.txt`
     opts = {
       options = {
-        icons_enabled = false,
+        icons_enabled = true,
         theme = 'onedark',
-        component_separators = '|',
-        section_separators = '',
+        component_separators = { left = '', right = '' },
+        section_separators = { left = '', right = '' },
+        disabled_filetypes = {},
       },
     },
+    sections = {
+      lualine_a = { 'mode' },
+      lualine_b = { 'branch' },
+      lualine_c = { {
+        'filename',
+        file_status = true, -- displays file status (readonly status, modified status)
+        path = 0 -- 0 = just filename, 1 = relative path, 2 = absolute path
+      } },
+      lualine_x = {
+        {'diagnostics', sources = { "nvim_diagnostic" }, symbols = { error = ' ', warn = ' ', info = ' ',
+        hint = ' ' } },
+        'encoding',
+        'filetype',
+      },
+      lualine_y = {},
+      lualine_z = {},
+    },
+    tabline = {},
+    extensions = {'fugitive'}
   },
 
   { -- Add indentation guides even on blank lines
@@ -147,7 +175,9 @@ require('lazy').setup({
   { 'numToStr/Comment.nvim', opts = {} },
 
   -- Fuzzy Finder (files, lsp, etc)
-  { 'nvim-telescope/telescope.nvim', version = '*', dependencies = { 'nvim-lua/plenary.nvim' } },
+  {
+    'nvim-telescope/telescope.nvim', version = '*', dependencies = { 'nvim-lua/plenary.nvim' }
+  },
 
   -- Fuzzy Finder Algorithm which requires local dependencies to be built.
   -- Only load if `make` is available. Make sure you have the system
@@ -168,6 +198,10 @@ require('lazy').setup({
       'nvim-treesitter/nvim-treesitter-textobjects',
     },
     build = ":TSUpdate",
+    config = function()
+      local parser_config = require "nvim-treesitter.parsers".get_parser_configs()
+      parser_config.tsx.filetype_to_parsername = { "javascript", "typescript.tsx" }
+    end,
   },
 
   -- NOTE: Next Step on Your Neovim Journey: Add/Configure additional "plugins" for kickstart
@@ -223,7 +257,7 @@ vim.o.timeout = true
 vim.o.timeoutlen = 300
 
 -- Set completeopt to have a better completion experience
-vim.o.completeopt = 'menuone,noselect'
+vim.o.completeopt = 'menuone,noinsert,noselect'
 
 -- NOTE: You should make sure your terminal supports this
 vim.o.termguicolors = true
@@ -254,16 +288,41 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 require('telescope').setup {
   defaults = {
     mappings = {
+      n = {
+        ['q'] = require('telescope.actions').close
+      },
       i = {
         ['<C-u>'] = false,
         ['<C-d>'] = false,
       },
     },
   },
+  extensions = {
+    file_browser = {
+      theme = "dropdown",
+      -- disables netrw and use telescope-file-browser in its place
+      hijack_netrw = true,
+      mappings = {
+        -- your custom insert mode mappings
+        ["i"] = {
+          ["<C-w>"] = function() vim.cmd('normal vbd') end,
+        },
+        ["n"] = {
+          ["N"] = require "telescope".extensions.file_browser.actions.create,
+          ["h"] = require "telescope".extensions.file_browser.actions.goto_parent_dir,
+          ["/"] = function ()
+            vim.cmd('startinsert')
+          end
+        },
+      },
+    }
+  }
 }
 
 -- Enable telescope fzf native, if installed
 pcall(require('telescope').load_extension, 'fzf')
+pcall(require('telescope').load_extension, 'file_browser')
+
 
 -- See `:help telescope.builtin`
 vim.keymap.set('n', '<leader>?', require('telescope.builtin').oldfiles, { desc = '[?] Find recently opened files' })
@@ -276,7 +335,7 @@ vim.keymap.set('n', '<leader>/', function()
   })
 end, { desc = '[/] Fuzzily search in current buffer' })
 
-vim.keymap.set('n', '<leader>sf', require('telescope.builtin').find_files, { desc = '[S]earch [F]iles' })
+--vim.keymap.set('n', '<leader>sf', require('telescope.builtin').find_files, { desc = '[S]earch [F]iles' })
 vim.keymap.set('n', '<leader>sh', require('telescope.builtin').help_tags, { desc = '[S]earch [H]elp' })
 vim.keymap.set('n', '<leader>sw', require('telescope.builtin').grep_string, { desc = '[S]earch current [W]ord' })
 vim.keymap.set('n', '<leader>sg', require('telescope.builtin').live_grep, { desc = '[S]earch by [G]rep' })
@@ -286,7 +345,7 @@ vim.keymap.set('n', '<leader>sd', require('telescope.builtin').diagnostics, { de
 -- See `:help nvim-treesitter`
 require('nvim-treesitter.configs').setup {
   -- Add languages to be installed here that you want installed for treesitter
-  ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'tsx', 'typescript', 'vimdoc', 'vim' },
+  ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'tsx', 'typescript', 'javascript', 'css', 'html', 'json', 'yaml', 'toml', 'php', 'vimdoc', 'vim' },
 
   -- Autoinstall languages that are not installed. Defaults to false (but you can change for yourself!)
   auto_install = false,
@@ -393,11 +452,42 @@ local on_attach = function(_, bufnr)
     print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
   end, '[W]orkspace [L]ist Folders')
 
+  nmap('sf', function()
+  require('telescope').extensions.file_browser.file_browser({
+    path = "%:p:h",
+    cwd = vim.fn.expand('%:p:h'),
+    respect_gitignore = false,
+    hidden = true,
+    grouped = true,
+    previewer = false,
+    initial_mode = "normal",
+    layout_config = { height = 40 }
+  }) end, '[S]earch [Files] and File Browser')
+
   -- Create a command `:Format` local to the LSP buffer
   vim.api.nvim_buf_create_user_command(bufnr, 'Format', function(_)
     vim.lsp.buf.format()
   end, { desc = 'Format current buffer with LSP' })
 end
+
+--tabs
+vim.keymap.set('n', '<Tab>', '<Cmd>BufferLineCycleNext<CR>', { desc = 'Next tab' })
+vim.keymap.set('n', '<S-Tab>', '<Cmd>BufferLineCyclePrev<CR>', { desc = 'Prev Tab' })
+
+--vim.api.nvim_set_keymap(
+--  "n",
+--  "<leader>fb",
+--  ":Telescope file_browser",
+--  { noremap = true }
+--)
+
+-- open file_browser with the path of the current buffer
+vim.api.nvim_set_keymap(
+  "n",
+  "<leader>fb",
+  ":Telescope file_browser path=%:p:h select_buffer=true",
+  { noremap = true }
+)
 
 -- Enable the following language servers
 --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
@@ -487,6 +577,10 @@ cmp.setup {
     { name = 'luasnip' },
   },
 }
+
+vim.cmd [[
+  highlight! default link CmpItemKind CmpItemMenuDefault
+]]
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
