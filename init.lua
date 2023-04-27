@@ -474,7 +474,10 @@ vim.keymap.set('n', '<Tab>', '<Cmd>BufferLineCycleNext<CR>', { desc = 'Next tab'
 vim.keymap.set('n', '<S-Tab>', '<Cmd>BufferLineCyclePrev<CR>', { desc = 'Prev Tab' })
 
 --transparent toggle
-vim.keymap.set('n', 'tr', '<Cmd>TransparentToggle<CR>', { desc = 'Transparent toggle' })
+vim.keymap.set('n', '<leader>tr', '<Cmd>TransparentToggle<CR>', { desc = 'Transparent toggle' })
+
+--CHADTree
+vim.keymap.set('n', '<leader>v', '<Cmd>CHADopen<CR>', { desc = 'Open CHADTree' })
 
 --vim.api.nvim_set_keymap(
 --  "n",
